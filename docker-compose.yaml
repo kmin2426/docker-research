@@ -10,10 +10,11 @@ services:
     working_dir: /workspace
     volumes:
       - .:/workspace
-      - research-home:/home/researcher
+      - home:/home/researcher
     gpus: all
     stdin_open: true
     tty: true
     command: sleep infinity
 volumes:
-  research-home:
+  home:
+    name: ${PROJECT_NAME:-docker-research}

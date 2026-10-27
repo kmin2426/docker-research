@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
 
 root = Path(__file__).resolve().parent.parent
@@ -29,7 +30,7 @@ def main():
     email = ask('Author email')
     if any(c in author + email for c in '\r\n') or not re.fullmatch(r'[^\s@]+@[^\s@]+', email):
         raise ValueError('Enter a valid single-line author and email')
-    print('License:\n  1) MIT\n  2) Apache-2.0\n  3) BSD-3-Clause\n  4) GPL-3.0-only\n  5) Custom license file')
+    print('License:\n  1) MIT\n  2) Apache-2.0\n  3) BSD-3-Clause\n  4) GPL-3.0-only\n  5) Empty LICENSE')
     choice = ask('Select a number', '1')
     original = Path('LICENSE').read_text(encoding='utf-8').rstrip()
     licenses = {'2': 'Apache-2.0', '3': 'BSD-3-Clause', '4': 'GPL-3.0-only'}
@@ -43,11 +44,8 @@ def main():
         if choice == '3':
             license_text = license_text.replace('{year}', str(datetime.date.today().year)).replace('{author}', author)
     elif choice == '5':
-        license_name = ask('License name (e.g. Apache-2.0)')
-        license_path = Path(ask('Path to license text')).expanduser()
-        license_text = license_path.read_text(encoding='utf-8').strip() + '\n'
-        if not license_text.strip():
-            raise ValueError('Custom license file is empty')
+        license_name = 'Unspecified'
+        license_text = ''
     else:
         raise ValueError('Choose a number from 1 to 5')
     if choice != '1' and Path('LICENSE.template').exists():
@@ -71,8 +69,9 @@ def main():
         Path('README.md').write_text(f'# {name}\n', encoding='utf-8')
     else:
         Path('README.md').unlink(missing_ok=True)
+    shutil.rmtree('scripts')
     print(f'Initialized {name}: image {name}:latest, Compose project {name}.')
-    print('Review LICENSE and project.json, then run ./scripts/build.sh or open the Dev Container.')
+    print('Review LICENSE and project.json, then run ./.devcontainer/build.sh or open the Dev Container.')
 
 
 if __name__ == '__main__':
