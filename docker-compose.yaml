@@ -5,12 +5,18 @@ services:
       context: .
       dockerfile: docker/Dockerfile
       args:
+        PROJECT_NAME: ${PROJECT_NAME:-docker-research}
         USER_UID: ${USER_UID:-1000}
         USER_GID: ${USER_GID:-1000}
     working_dir: /workspace
     volumes:
       - .:/workspace
-      - home:/home/researcher
+      - type: bind
+        source: ${DATASETS_DIR:-./datasets}
+        target: /workspace/datasets
+        bind:
+          create_host_path: false
+      - home:/home/${PROJECT_NAME:-docker-research}
     gpus: all
     stdin_open: true
     tty: true

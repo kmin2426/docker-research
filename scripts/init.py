@@ -23,9 +23,13 @@ def ask(prompt, default=''):
 def main():
     if Path('.env').exists() or Path('project.json').exists():
         raise ValueError('.env or project.json already exists; initialization would overwrite it')
-    name = ask('Project name (lowercase letters, digits, hyphens, underscores)', root.name.lower())
-    if not re.fullmatch(r'[a-z0-9][a-z0-9_-]*', name):
-        raise ValueError('Project name must start with a lowercase letter or digit and contain only lowercase letters, digits, hyphens, and underscores')
+    name = ask('Project name (spaces become hyphens; lowercase, up to 32 characters)', root.name.lower())
+    name = re.sub(r'\s+', '-', name)
+    if not re.fullmatch(r'[a-z][a-z0-9_-]{0,31}', name):
+        raise ValueError('Project name must start with a lowercase letter and contain at most 32 lowercase letters, digits, hyphens, and underscores')
+    reserved = {'root', 'daemon', 'bin', 'sys', 'sync', 'games', 'man', 'lp', 'mail', 'news', 'uucp', 'proxy', 'www-data', 'backup', 'list', 'irc', 'gnats', 'nobody', 'systemd-network', 'systemd-resolve', 'messagebus', 'syslog', 'ubuntu'}
+    if name in reserved:
+        raise ValueError(f'{name} is reserved for a system account or group; choose another name')
     target = root.parent / name
     if target != root and target.exists():
         raise ValueError(f'Cannot rename project: {target} already exists')
@@ -62,11 +66,30 @@ def main():
     gid = os.getgid() if hasattr(os, 'getgid') else 1000
     if uid == 0 or gid == 0:
         raise ValueError('Run as a non-root user so workspace files use your UID and GID')
+    compose_path = Path('docker-compose.yaml')
+    compose = compose_path.read_text(encoding='utf-8')
+    if '  research:\n' not in compose:
+        raise ValueError('Compose service template was changed; cannot initialize safely')
+    devcontainer_path = Path('.devcontainer/devcontainer.json')
+    devcontainer = json.loads(devcontainer_path.read_text(encoding='utf-8'))
+    if devcontainer.get('service') != 'research':
+        raise ValueError('Dev Container service template was changed; cannot initialize safely')
+    devcontainer['service'] = name
+    devcontainer['name'] = name
+    script_paths = [Path('.devcontainer/build.sh'), Path('.devcontainer/run.sh')]
+    scripts = [path.read_text(encoding='utf-8') for path in script_paths]
+    if any(' research' not in script for script in scripts):
+        raise ValueError('Compose script template was changed; cannot initialize safely')
     metadata = {'name': name, 'author': author, 'email': email, 'license': license_name}
-    env = f'PROJECT_NAME={name}\nCOMPOSE_PROJECT_NAME={name}\nUSER_UID={uid}\nUSER_GID={gid}\n'
+    env = f'PROJECT_NAME={name}\nCOMPOSE_PROJECT_NAME={name}\nUSER_UID={uid}\nUSER_GID={gid}\nDATASETS_DIR=./datasets\n'
     # Validate all inputs before modifying any files.
+    compose_path.write_text(compose.replace('  research:\n', f'  {name}:\n', 1), encoding='utf-8')
+    devcontainer_path.write_text(json.dumps(devcontainer, indent=2) + '\n', encoding='utf-8')
+    for path, script in zip(script_paths, scripts):
+        path.write_text(script.replace(' research', f' {name}'), encoding='utf-8')
     Path('project.json').write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     Path('.env').write_text(env, encoding='utf-8')
+    Path('datasets').mkdir(exist_ok=True)
     if choice != '1':
         Path('NOTICE').write_text('Original template license:\n\n' + original + '\n', encoding='utf-8')
     Path('LICENSE').write_text(license_text, encoding='utf-8')
@@ -83,6 +106,10 @@ Install Docker, Docker Compose, VS Code with Dev Containers, and the NVIDIA Cont
 ```
 
 Alternatively, open this folder in VS Code and select **Dev Containers: Reopen in Container**. After changing dependencies, use **Dev Containers: Rebuild Container**. Add Python dependencies to `requirements.txt`.
+
+## Datasets
+
+The host directory in `.env` as `DATASETS_DIR` is mounted at `/workspace/datasets`. The default is `./datasets`; create the host directory before starting the container.
 
 ## Authentication and data
 

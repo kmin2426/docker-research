@@ -33,6 +33,10 @@ After initialization, the folder is renamed to the project name and `scripts/` i
 ```
 
 
+## Datasets
+
+Set `DATASETS_DIR` in `.env` to an existing host directory. It is available at `/workspace/datasets` inside the container. The default is `./datasets`; create the directory before starting the container.
+
 ## Authentication
 
 Run `codex` and `claude` in the container and sign in.

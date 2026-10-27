@@ -3,7 +3,6 @@
   "dockerComposeFile": "../docker-compose.yaml",
   "service": "research",
   "workspaceFolder": "/workspace",
-  "remoteUser": "researcher",
   "updateRemoteUserUID": false,
   "customizations": {
     "vscode": {

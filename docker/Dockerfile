@@ -1,6 +1,7 @@
 FROM node:22-bookworm-slim AS node
 FROM nvidia/cuda:12.8.1-devel-ubuntu22.04
 
+ARG PROJECT_NAME=docker-research
 ARG USER_UID=1000
 ARG USER_GID=1000
 ENV DEBIAN_FRONTEND=noninteractive
@@ -20,15 +21,15 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
 COPY requirements.txt /tmp/requirements.txt
 RUN python3 -m pip install --no-cache-dir -r /tmp/requirements.txt && \
     rm /tmp/requirements.txt
-RUN groupadd --gid "${USER_GID}" researcher && \
-    useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home --shell /bin/bash researcher && \
-    mkdir -p /home/researcher/.codex /home/researcher/.claude /home/researcher/.cache/huggingface /home/researcher/.vscode-server && \
-    printf 'cli_auth_credentials_store = "file"\n' > /home/researcher/.codex/config.toml && \
-    chown -R researcher:researcher /home/researcher
+RUN groupadd --gid "${USER_GID}" "${PROJECT_NAME}" && \
+    useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home --home-dir "/home/${PROJECT_NAME}" --shell /bin/bash "${PROJECT_NAME}" && \
+    mkdir -p /home/${PROJECT_NAME}/.codex /home/${PROJECT_NAME}/.claude /home/${PROJECT_NAME}/.cache/huggingface /home/${PROJECT_NAME}/.vscode-server && \
+    printf 'cli_auth_credentials_store = "file"\n' > /home/${PROJECT_NAME}/.codex/config.toml && \
+    chown -R "${PROJECT_NAME}:${PROJECT_NAME}" "/home/${PROJECT_NAME}"
 COPY docker/entrypoint.sh /usr/local/bin/research-entrypoint
-USER researcher
-ENV HOME=/home/researcher CODEX_HOME=/home/researcher/.codex \
-    CLAUDE_CONFIG_DIR=/home/researcher/.claude HF_HOME=/home/researcher/.cache/huggingface \
+USER ${PROJECT_NAME}
+ENV HOME=/home/${PROJECT_NAME} CODEX_HOME=/home/${PROJECT_NAME}/.codex \
+    CLAUDE_CONFIG_DIR=/home/${PROJECT_NAME}/.claude HF_HOME=/home/${PROJECT_NAME}/.cache/huggingface \
     DISABLE_AUTOUPDATER=1
 WORKDIR /workspace
 ENTRYPOINT ["/usr/local/bin/research-entrypoint"]
