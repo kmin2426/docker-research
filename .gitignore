@@ -218,3 +218,20 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local research data and credentials
+.env.*
+!.env.example
+/datasets/*
+!/datasets/.gitkeep
+/outputs/*
+!/outputs/.gitkeep
+.codex/
+.claude/
+.claude.json*
+auth.json
+.credentials.json
+.huggingface/
+.aws/
+.ssh/
+.kube/

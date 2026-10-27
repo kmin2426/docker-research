@@ -1,0 +1,19 @@
+services:
+  research:
+    image: ${PROJECT_NAME:-docker-research}:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - research-home:/home/researcher
+    gpus: all
+    stdin_open: true
+    tty: true
+    command: sleep infinity
+volumes:
+  research-home:
