@@ -25,7 +25,7 @@ License:
 Select a number: 5
 Add README? (yes/no): yes
 ```
-After initialization, `scripts/` is removed; the GitHub Actions workflow remains. Each collaborator configures their own `.env` using `.env.example`.
+After initialization, the folder is renamed to the project name and `scripts/` is removed; the GitHub Actions workflow remains. Run `cd ../<project-name>` to update your shell path. Each collaborator configures their own `.env` using `.env.example`.
 
 ```bash
 ./.devcontainer/build.sh
@@ -46,4 +46,4 @@ Every branch push builds the Docker image. A successful push to `main` publishes
 
 ## License
 
-See [LICENSE](LICENSE). When selecting a non-MIT license during initialization, the original template's MIT notice is preserved in `LICENSE.template`.
+See [LICENSE](LICENSE). When selecting a non-MIT license during initialization, the original template's MIT notice is preserved in `NOTICE`.

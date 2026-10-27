@@ -26,6 +26,11 @@ def main():
     name = ask('Project name (lowercase letters, digits, hyphens, underscores)', root.name.lower())
     if not re.fullmatch(r'[a-z0-9][a-z0-9_-]*', name):
         raise ValueError('Project name must start with a lowercase letter or digit and contain only lowercase letters, digits, hyphens, and underscores')
+    target = root.parent / name
+    if target != root and target.exists():
+        raise ValueError(f'Cannot rename project: {target} already exists')
+    if target != root and not os.access(root.parent, os.W_OK | os.X_OK):
+        raise ValueError(f'Cannot rename project: no write access to {root.parent}')
     author = ask('Author')
     email = ask('Author email')
     if any(c in author + email for c in '\r\n') or not re.fullmatch(r'[^\s@]+@[^\s@]+', email):
@@ -48,8 +53,8 @@ def main():
         license_text = ''
     else:
         raise ValueError('Choose a number from 1 to 5')
-    if choice != '1' and Path('LICENSE.template').exists():
-        raise ValueError('LICENSE.template already exists; initialization would overwrite it')
+    if choice != '1' and Path('NOTICE').exists():
+        raise ValueError('NOTICE already exists; initialization would overwrite it')
     readme = ask('Add README? (yes/no)', 'yes').lower()
     if readme not in ('yes', 'y', 'no', 'n'):
         raise ValueError('Answer yes or no')
@@ -63,14 +68,38 @@ def main():
     Path('project.json').write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     Path('.env').write_text(env, encoding='utf-8')
     if choice != '1':
-        Path('LICENSE.template').write_text(original + '\n', encoding='utf-8')
+        Path('NOTICE').write_text('Original template license:\n\n' + original + '\n', encoding='utf-8')
     Path('LICENSE').write_text(license_text, encoding='utf-8')
     if readme in ('yes', 'y'):
-        Path('README.md').write_text(f'# {name}\n', encoding='utf-8')
+        Path('README.md').write_text(f'''# {name}
+
+## Setup
+
+Install Docker, Docker Compose, VS Code with Dev Containers, and the NVIDIA Container Toolkit. A compatible NVIDIA GPU and driver are required.
+
+```bash
+./.devcontainer/build.sh
+./.devcontainer/run.sh
+```
+
+Alternatively, open this folder in VS Code and select **Dev Containers: Reopen in Container**. After changing dependencies, use **Dev Containers: Rebuild Container**. Add Python dependencies to `requirements.txt`.
+
+## Authentication and data
+
+Run `codex` and `claude` in the container and sign in. Local sessions and credentials persist in the project Docker volume across rebuilds. `docker compose down -v` deletes the volume. Extension and external service state may not persist; back up important records.
+
+## CI
+
+Pushes build the Docker image. Pushes to `main` also publish it to GHCR using `GITHUB_TOKEN`.
+''', encoding='utf-8')
     else:
         Path('README.md').unlink(missing_ok=True)
+    if target != root:
+        root.rename(target)
     shutil.rmtree('scripts')
     print(f'Initialized {name}: image {name}:latest, Compose project {name}.')
+    if target != root:
+        print(f'Directory renamed to {target}. Run: cd ../{name}')
     print('Review LICENSE and project.json, then run ./.devcontainer/build.sh or open the Dev Container.')
 
 
