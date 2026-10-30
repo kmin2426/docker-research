@@ -8,15 +8,9 @@
     "vscode": {
       "extensions": [
         "ms-python.python",
-        // Pinned: 26.1021.x fails with "Codex could not start its user interface"
-        // (renderer_ready_timeout) once logged in after a rebuild. See openai/codex#57032.
-        "openai.chatgpt@26.1007.21434",
+        "openai.chatgpt",
         "anthropic.claude-code"
-      ],
-      "settings": {
-        // Keep the pinned Codex extension from being auto-updated inside the container.
-        "extensions.autoUpdate": false
-      }
+      ]
     }
   }
 }
